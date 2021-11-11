@@ -1,0 +1,12 @@
+# Requirements for the Curve fitter
+
+###### Requirements without Version Specifiers ######
+python
+#tkinter ?
+pandas
+pandastable
+
+###### Requirements with Version Specifiers ######
+python  >= 3.6
+pandas	>= 1.2.2
+pandastable 0.12.2.post1
