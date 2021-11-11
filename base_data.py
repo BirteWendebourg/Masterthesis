@@ -44,7 +44,7 @@ class BaseData:
 
     def check_header(self, headers, number_of_columns):
         """check if all headers are given"""
-        'TO DO: check that every header is unique'
+        'TO DO: check that every header is unique, up til now only looks if the headers are there'
         if len(headers) != number_of_columns:
             self.check_loading = 1
             return None
