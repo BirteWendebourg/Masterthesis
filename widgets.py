@@ -1,6 +1,25 @@
 """ helping functions for the gui design """
 import tkinter as tk
 from tkinter import ttk
+import numpy as np
+
+# global variables
+current_function = str()    # variable to store the function formula to be analysed
+
+def function_run1(x_value, a):
+    return eval(current_function)
+
+def function_run2(x_value, a, b):
+    return eval(current_function)
+
+def function_run3(x_value, a, b, c):
+    return eval(current_function)
+
+def function_run4(x_value, a, b, c, d):
+    return eval(current_function)
+
+def function_run5(x_value, a, b, c, d, e):
+    return eval(current_function)
 
 
 def data_window():
@@ -21,23 +40,11 @@ def create_entry(name, window):
     return entry_input
 
 
-def create_box(window):
+def create_box(window, input):
     """creates a combobox with the unit options next to the header entry fields"""
     box_input = tk.StringVar()
     new_box = ttk.Combobox(window, textvariable=box_input)
-    new_box['values'] = ('without unit', '°C', '°F', 'K', '/day', '/hour', 'ml', u'\u03bc'+'l',
-                         'g', 'mg', u'\u03bc'+'g', 'pg', 'cells/ml', 'cells/'u'\u03bc'+'l',
-                         'cells/'u'\u03bc'+'g', 'cells/pg', 'cells/mol', 'cells/'u'\u03bc'+'mol',
-                         u'\u03bc'+'mol O2/cell', u'\u03bc'+'mol C/cell', u'\u03bc'+'mol O2/ml',
-                         'mol O2/ml', u'\u03bc'+'mol O2/'u'\u03bc'+'l', 'mol O2/'u'\u03bc'+'l',
-                         u'\u03bc'+'mol C/ml', 'mol C/ml', u'\u03bc'+'mol C/'u'\u03bc'+'l',
-                         'mol C/'u'\u03bc'+'l', u'\u03bc'+'mol O2/cell day', 'mol O2/cell day',
-                         u'\u03bc'+'mol O2/cell hour', 'mol O2/cell hour',
-                         u'\u03bc'+'mol C/cell day', 'mol C/cell day', u'\u03bc'+'mol C/cell hour',
-                         'mol C/cell hour', u'\u03bc'+'mol C/'u'\u03bc'+'mol O2', 'mol C/mol O2',
-                         'nmol O2/cell', 'nmol C/cell', 'nmol O2/ml', 'nmol O2/'u'\u03bc'+'l',
-                         'nmol C/ml', 'nmol C/'u'\u03bc'+'l', 'nmol O2/cell day',
-                         'nmol O2/cell hour', 'nmol C/cell day', 'nmol C/cell hour',
-                         'nmol C/nmol O2')
-    new_box.pack(ipady=4)
+    new_box['values'] = input
+    new_box['state'] = 'readonly'
+    new_box.pack(ipady=4, side='top')
     return box_input

@@ -1,4 +1,4 @@
-""" helper class that connects the GUI to the data classes """
+""" helper class that connects the GUI to the data class """
 # imports for the gui
 import tkinter as tk
 # imports for the data handling
@@ -22,22 +22,27 @@ class ConData:
 
         """data handling functions"""
         'TO DO: load data  ->  check if data set is new or reload and ask for units if it is new'
-        'TO DO: save and save as  ->   handle save and turn it into save as'
+        self.filepath = str()       # string to save the path to the data
+        self.first_save = True
+        # boolean to make sure that the input file is only overwritten when the user wants this!
+        self.new_data = True
+        # boolean to make sure that the current date is only overwritten when the user wants this!
         self.load_data = None       # initialize window for additional input information
         self.header_entry = []      # entries for the new header names
         self.chosen_units = []    # combobox for choosing the units
 
-    # data input
+    # visuals and windows for data input
     def open_file(self):
         """open the input file and check if it is opened successfully"""
         # asks the user for the input file
-        filepath = filedialog.askopenfilename(filetypes=[('Comma Separated Values', '*.csv')])
-        if len(filepath) == 0:
+        self.filepath = filedialog.askopenfilename(
+            filetypes=[('Comma Separated Values', '*.csv')])
+        if len(self.filepath) == 0:
             return 1
         # attempt to open the file
-        with open(filepath) as stream:
+        with open(self.filepath) as stream:
             # create a dataframe from the input data
-            self.input_data = pd.read_csv(stream)
+            self.input_data = pd.read_csv(stream, engine='python', sep=None, na_values="NaN")
             return 0
 
     def present_unprocessed(self):
@@ -49,9 +54,7 @@ class ConData:
         # check that the input file opens correctly
         if self.open_file() == 0:
             # destroy the load buttons to make room and show the new input data
-            self.gui.tabs.init_load.destroy()
-            self.gui.tabs.reload.destroy()
-            self.gui.show(self.gui.tabs.data_tab, self.input_data)
+            self.gui.tabs.set_up_data_tab(1)
         return 0
 
     def process_info_window(self):
@@ -64,18 +67,21 @@ class ConData:
 
         # initialization of the data class object
         # during the initialization the headers and units are checked
-        data = base.BaseData(header, units, self.input_data)
+        self.data = base.BaseData(header, units, self.input_data)
         # when headers are missing
-        if data.check_loading == 1:
+        if self.data.check_loading == 1:
             header_error = tk.Toplevel()
             header_error.title("Header Error")
             header_error.geometry('200x100')
-            tk.Message(header_error, text="Please select a header for all columns!").pack(side='top')
+            tk.Message(header_error, text="Please select a header for all columns!")\
+                .pack(side='top')
+            'TODO: add which header needs to be set/that Unnamed or something similar' \
+                'that is easier to spot, is not a valid header name'
             header_error_close = tk.Button(header_error, text="Ok", command=header_error.destroy)
             header_error_close.pack()
             return 1
         # when units are missing or not valid
-        elif data.check_loading == 2:
+        if self.data.check_loading == 2:
             unit_error = tk.Toplevel()
             unit_error.title("Unit Error")
             unit_error.geometry('200x100')
@@ -83,13 +89,16 @@ class ConData:
             unit_error_close = tk.Button(unit_error, text="Ok", command=unit_error.destroy)
             unit_error_close.pack()
             return 1
-        else:
-            # show the data in the data tab
-            self.gui.show(self.gui.tabs.data_tab, data.datatable)
-
-            # close the window with the information for the input data
-            self.load_data.destroy()
-            return 0
+        # only happens if both if statements are not true!
+        # show the data in the data tab
+        self.gui.show(self.gui.tabs.data_tab, self.data.datatable)
+        # close the window with the information for the input data
+        self.load_data.destroy()
+        # reset and load the analyse tab
+        self.gui.con_a.wrap_frame = None
+        self.gui.tabs.set_up_analyse_tab()
+        self.new_data = False
+        return 0
 
     def info_window(self):
         """get additional information on the input data"""
@@ -115,81 +124,116 @@ class ConData:
         self.header_entry = [w.create_entry(self.input_data.columns[x], header_frame)
                              for x in range(col_num)]
         # create drop down menus for a selection of units
-        self.chosen_units = [w.create_box(unit_frame) for _ in range(col_num)]
+        'TODO: move units to unit converter class'
+        units = ('without unit', '°C', '°F', 'K',           # temperature
+                 'PAR', u'\u03bc'+ 'mol photons/m**2 s',    # light
+                 '/day', '/hour', 'ml', u'\u03bc' + 'l',    # time and volume
+                 'g', 'mg', u'\u03bc' + 'g', 'pg',          # weight
+                 'g/mol', 'mg/mol', u'\u03bc' + 'g/mol',    # mass
+                 'pg/mol',
+                 'km', 'm', 'cm', 'mm', u'\u03bc' + 'm',    # distance/size
+                 'cells/ml', 'cells/'u'\u03bc' + 'l',       # cells per volume
+                 'cells/'u'\u03bc' + 'g', 'cells/pg',       # cells per weight
+                 'cells/mol', 'cells/'u'\u03bc' + 'mol',    # cells per mol
+                 u'\u03bc' + 'mol O2/cell', u'\u03bc' + 'mol C/cell',   # O2 and C per cell
+                 u'\u03bc' + 'mol O2/ml', 'mol O2/ml', u'\u03bc' + 'mol O2/'u'\u03bc' + 'l',
+                 'mol O2/'u'\u03bc' + 'l',                  # O2 per volume
+                 u'\u03bc' + 'mol C/ml', 'mol C/ml', u'\u03bc' + 'mol C/'u'\u03bc' + 'l',
+                 'mol C/'u'\u03bc' + 'l',                   # C per volume
+                 u'\u03bc' + 'mol O2/cell day', 'mol O2/cell day', u'\u03bc' + 'mol O2/cell hour',
+                 'mol O2/cell hour',                        # O2 per time
+                 u'\u03bc' + 'mol C/cell day', 'mol C/cell day', u'\u03bc' + 'mol C/cell hour',
+                 'mol C/cell hour',                         # C per time
+                 u'\u03bc' + 'mol C/'u'\u03bc' + 'mol O2', 'mol C/mol O2',
+                 'nmol C/nmol O2',                          # C per O2
+                 'nmol O2/cell', 'nmol C/cell',             # O2 and C per cell
+                 'nmol O2/ml', 'nmol O2/'u'\u03bc' + 'l', 'nmol C/ml',
+                 'nmol C/'u'\u03bc' + 'l',                  # O2 and C per volume
+                 'nmol O2/cell day', 'nmol O2/cell hour', 'nmol C/cell day',
+                 'nmol C/cell hour')                        # O2 and C per cell per time
+        self.chosen_units = [w.create_box(unit_frame, units) for _ in range(col_num)]
         return 0
 
+    # loading data
     def load(self):
         """loads new data"""
+        # warn the user when there is already data loaded
+        if self.new_data is False:
+            self.check_current_state(0)
+            return
         self.present_unprocessed()
-        'TO DO: open window to ask for headers and units'
         self.info_window()
-        return 0
+        return
 
     def reload(self):
         """loads already processed data"""
+        # warn the user when there is already data loaded
+        if self.new_data is False:
+            self.check_current_state(1)
+            return
         self.present_unprocessed()
-        'TO DO: check if headers and units are correct'
-        'TO DO: if headers and/or units are not correct,' \
+        header = []
+        for column in self.input_data.columns:
+            header.append(column)
+        data = self.input_data.iloc[1:]
+        data = data.astype("float64", errors='ignore')
+        print(data.info())
+
+        self.data = base.BaseData(header, self.input_data.iloc[0], data)
+        if self.data.check_loading == 0:
+            self.gui.tabs.set_up_analyse_tab()
+            return
+        del self.data
+        self.info_window()
+        'TODO: check if headers and units are correct'
+        'TODO: if headers and/or units are not correct,'
+        'TODO: not working correctly check why units cannot be set with this method'
         'open a window to allow the user to make changes'
 
+    # saving data
     def save(self):
         """save processed input data with correct headers and units
          at the original or already defined location"""
-        'TO DO: implement saving process'
+        if self.first_save is True:
+            self.save_as()
+            return 0
+        with open(self.filepath, mode='w') as stream:
+            self.data.datatable.to_csv(stream, index=False)
         return 0
 
     def save_as(self):
         """save processed input data with correct headers and units at the chosen location"""
-        'TO DO: ask user for the location to save the input data and start the saving process'
-        self.save()
+        save_path = filedialog.asksaveasfilename(filetypes=[('Comma Separated Values', '*.csv')])
+        if len(save_path) == 0:
+            return 1
+        self.filepath = save_path
+        self.first_save = False
+        with open(self.filepath, mode='w') as stream:
+            self.data.datatable.to_csv(stream, index=False)
         return 0
 
-    'TO DO: implement connection to the base data where the data will be stored'
+    # handeling old data, when new data is loaded
+    def check_current_state(self, loading):
+        """ handles already loaded data """
+        data_warning = tk.Toplevel()
+        data_warning.title("Data Warning")
+        data_warning.geometry('300x125')
+        tk.Label(data_warning, text="\nDo you want to load new data?\n"
+                                      "The current data and analyses will "
+                                      "be deleted in the process!",
+                 wraplength=250, justify=tk.CENTER).pack(side='top')
+        tk.Button(data_warning, text="Cancel", command=lambda: [data_warning.destroy()])\
+            .pack(side=tk.LEFT)
+        tk.Button(data_warning, text="Save & Continue", command=lambda:
+        [data_warning.destroy(), self.go_on(1, loading)]).pack(side=tk.LEFT)
+        tk.Button(data_warning, text="Continue", command=lambda:
+        [data_warning.destroy(), self.go_on(0, loading)]).pack(side=tk.LEFT)
 
-
-
-
-
-
-
-
-
-
-
-'TO DO: move ConUnit and ConAnalyse into own files'
-
-
-class ConUnit:
-    """connection to the unit converter"""
-    def __init__(self):
-        return
-
-    def converter(self):
-        return
-
-
-
-
-
-
-
-
-
-
-
-
-class ConAnalyse:
-    def __init__(self):
-        return
-
-    def new_analyse(self):
-        """starts a new analysis"""
-        return
-
-    # starting an analysis
-    # preprocessing of the data (splice to only give the analysis the needed data)
-    # option to select the data, the analysis type and the starting parameters,
-    # provide default starting parameters
-    #   -> should this be here or in the GUI?
-    # option to call multiple Analysis objects
-    # function to show the results (key values, graph...)·
+    def go_on(self, saving, going):
+        if saving == 1:
+            self.save()
+        self.new_data = True
+        if going == 0:
+            self.load()
+        else:
+            self.reload()

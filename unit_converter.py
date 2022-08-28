@@ -14,3 +14,13 @@ def check_units(units, number_of_columns):
         if unit == '':
             return None, 2
     return units, 0
+
+
+class ConUnit:
+    """connection to the unit converter"""
+    def __init__(self):
+        return
+
+    def converter(self):
+        """converts a unit into a different one, under construction"""
+        return
